@@ -1,0 +1,3 @@
+D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/build/CMakeFiles/crc32_crack.dir
+D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/build/CMakeFiles/edit_cache.dir
+D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/build/CMakeFiles/rebuild_cache.dir

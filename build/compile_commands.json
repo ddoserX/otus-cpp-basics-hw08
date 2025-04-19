@@ -1,0 +1,20 @@
+[
+{
+  "directory": "D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe   -g -Wall -Werror -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wold-style-cast -Weffc++ -O0 -o CMakeFiles\\crc32_crack.dir\\main.cpp.obj -c D:\\repos\\otus\\cpp-basic\\otus-cpp-basics-hw08\\main.cpp",
+  "file": "D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/main.cpp",
+  "output": "CMakeFiles/crc32_crack.dir/main.cpp.obj"
+},
+{
+  "directory": "D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe   -g -Wall -Werror -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wold-style-cast -Weffc++ -O0 -o CMakeFiles\\crc32_crack.dir\\CRC32.cpp.obj -c D:\\repos\\otus\\cpp-basic\\otus-cpp-basics-hw08\\CRC32.cpp",
+  "file": "D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/CRC32.cpp",
+  "output": "CMakeFiles/crc32_crack.dir/CRC32.cpp.obj"
+},
+{
+  "directory": "D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe   -g -Wall -Werror -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wold-style-cast -Weffc++ -O0 -o CMakeFiles\\crc32_crack.dir\\IO.cpp.obj -c D:\\repos\\otus\\cpp-basic\\otus-cpp-basics-hw08\\IO.cpp",
+  "file": "D:/repos/otus/cpp-basic/otus-cpp-basics-hw08/IO.cpp",
+  "output": "CMakeFiles/crc32_crack.dir/IO.cpp.obj"
+}
+]
