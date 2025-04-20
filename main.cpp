@@ -2,7 +2,8 @@
 #include <iostream>
 #include <limits>
 #include <vector>
-#include <chrono>
+#include <thread>
+#include <mutex>
 
 #include "CRC32.hpp"
 #include "IO.hpp"
@@ -11,6 +12,30 @@
 void replaceLastFourBytes(std::vector<char> &data, uint32_t value)
 {
   std::copy_n(reinterpret_cast<const char *>(&value), 4, data.end() - 4);
+}
+
+void findCrc32(size_t stride, size_t start, std::vector<char> data, size_t dataOffset, size_t bytesCount, uint32_t targetCrc32, bool &isFinded, std::vector<char> &resultData, std::mutex &mutex)
+{
+  const size_t maxVal = std::numeric_limits<uint32_t>::max();
+
+  for (size_t i = start; i < maxVal; i += stride)
+  {
+    if (isFinded)
+    {
+      return;
+    }
+
+    replaceLastFourBytes(data, uint32_t(i));
+    auto curCrc32 = crc32(data.data() + dataOffset, bytesCount, targetCrc32);
+
+    if (curCrc32 == targetCrc32)
+    {
+      std::lock_guard<std::mutex> lock{mutex};
+      isFinded = true;
+      resultData = data;
+      return;
+    }
+  }
 }
 
 /**
@@ -32,34 +57,33 @@ std::vector<char> hack(const std::vector<char> &original, const std::string &inj
   auto it = std::copy(original.begin(), original.end(), result.begin());
   std::copy(injection.begin(), injection.end(), it);
 
-  /*
-   * Внимание: код ниже крайне не оптимален.
-   * В качестве доп. задания устраните избыточные вычисления
-   */
-  const size_t maxVal = std::numeric_limits<uint32_t>::max();
-  for (size_t i = 0; i < maxVal; ++i)
+  std::mutex mutex;
+
+  const size_t threadsCount = std::thread::hardware_concurrency();
+  std::vector<std::thread> threads;
+  threads.reserve(threadsCount);
+
+  bool isFinded = false;
+  for (size_t i = 0; i < threadsCount; ++i)
   {
-    // Заменяем последние четыре байта на значение i
-    replaceLastFourBytes(result, uint32_t(i));
-    // Вычисляем CRC32 текущего вектора result
-
-    auto currentCrc32 = crc32(result.data() + original.size(), injection.size() + 4, originalCrc32);
-
-    if (currentCrc32 == originalCrc32)
+    auto lambda = [&]()
     {
-      std::cout << "Success\n";
-      return result;
-    }
+      findCrc32(threadsCount, i, result, original.size(), injection.size() + 4, originalCrc32, std::ref(isFinded), std::ref(result), std::ref(mutex));
+    };
 
-    // Отображаем прогресс
-    if (i % 1000 == 0)
-    {
-      std::cout << "progress: "
-                << static_cast<double>(i) / static_cast<double>(maxVal)
-                << std::endl;
-    }
+    threads.emplace_back(std::thread{lambda});
   }
-  throw std::logic_error("Can't hack");
+
+  for (size_t i = 0; i < threadsCount; ++i)
+  {
+    threads[i].join();
+  }
+  if (isFinded == false)
+  {
+    throw std::logic_error("Can't hack");
+  }
+
+  return result;
 }
 
 int main(int argc, char **argv)
@@ -74,14 +98,8 @@ int main(int argc, char **argv)
   try
   {
     const std::vector<char> data = readFromFile(argv[1]);
-    const auto start = std::chrono::steady_clock::now();
     const std::vector<char> badData = hack(data, "He-he-he");
-    const auto end = std::chrono::steady_clock::now();
     writeToFile(argv[2], badData);
-
-    const auto result = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-
-    std::cout << "work result: " << result.count() << " seconds\r\n";
   }
   catch (std::exception &ex)
   {
