@@ -2,6 +2,7 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include <chrono>
 
 #include "CRC32.hpp"
 #include "IO.hpp"
@@ -23,8 +24,7 @@ void replaceLastFourBytes(std::vector<char> &data, uint32_t value)
  * оригинального вектора
  * @return новый вектор
  */
-std::vector<char> hack(const std::vector<char> &original,
-                       const std::string &injection)
+std::vector<char> hack(const std::vector<char> &original, const std::string &injection)
 {
   const uint32_t originalCrc32 = crc32(original.data(), original.size());
 
@@ -42,13 +42,15 @@ std::vector<char> hack(const std::vector<char> &original,
     // Заменяем последние четыре байта на значение i
     replaceLastFourBytes(result, uint32_t(i));
     // Вычисляем CRC32 текущего вектора result
-    auto currentCrc32 = crc32(result.data(), result.size());
+
+    auto currentCrc32 = crc32(result.data() + original.size(), injection.size() + 4, originalCrc32);
 
     if (currentCrc32 == originalCrc32)
     {
       std::cout << "Success\n";
       return result;
     }
+
     // Отображаем прогресс
     if (i % 1000 == 0)
     {
@@ -72,8 +74,14 @@ int main(int argc, char **argv)
   try
   {
     const std::vector<char> data = readFromFile(argv[1]);
+    const auto start = std::chrono::steady_clock::now();
     const std::vector<char> badData = hack(data, "He-he-he");
+    const auto end = std::chrono::steady_clock::now();
     writeToFile(argv[2], badData);
+
+    const auto result = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+
+    std::cout << "work result: " << result.count() << " seconds\r\n";
   }
   catch (std::exception &ex)
   {
