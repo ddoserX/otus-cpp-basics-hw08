@@ -8,17 +8,19 @@
 #include "CRC32.hpp"
 #include "IO.hpp"
 
+constexpr size_t maxVal = std::numeric_limits<uint32_t>::max();
+
 /// @brief Переписывает последние 4 байта значением value
 void replaceLastFourBytes(std::vector<char> &data, uint32_t value)
 {
   std::copy_n(reinterpret_cast<const char *>(&value), 4, data.end() - 4);
 }
 
-void findCrc32(size_t stride, size_t start, std::vector<char> data, size_t dataOffset, size_t bytesCount, uint32_t targetCrc32, bool &isFinded, std::vector<char> &resultData, std::mutex &mutex)
+void findCrc32(size_t stride, size_t start, std::vector<char> data,
+               size_t dataOffset, size_t bytesCount, uint32_t targetCrc32,
+               bool &isFinded, std::vector<char> &resultData, std::mutex &mutex)
 {
-  const size_t maxVal = std::numeric_limits<uint32_t>::max();
-
-  for (size_t i = start; i < maxVal; i += stride)
+  for (size_t i = start; i <= maxVal; i += stride)
   {
     if (isFinded)
     {
@@ -26,8 +28,8 @@ void findCrc32(size_t stride, size_t start, std::vector<char> data, size_t dataO
     }
 
     replaceLastFourBytes(data, uint32_t(i));
-    auto curCrc32 = crc32(data.data() + dataOffset, bytesCount, targetCrc32);
-
+    auto curCrc32 = crc32(data.data() + dataOffset, bytesCount, ~targetCrc32);
+    
     if (curCrc32 == targetCrc32)
     {
       std::lock_guard<std::mutex> lock{mutex};
@@ -62,13 +64,14 @@ std::vector<char> hack(const std::vector<char> &original, const std::string &inj
   const size_t threadsCount = std::thread::hardware_concurrency();
   std::vector<std::thread> threads;
   threads.reserve(threadsCount);
-
+  
   bool isFinded = false;
   for (size_t i = 0; i < threadsCount; ++i)
   {
     auto lambda = [&]()
     {
       findCrc32(threadsCount, i, result, original.size(), injection.size() + 4, originalCrc32, std::ref(isFinded), std::ref(result), std::ref(mutex));
+      
     };
 
     threads.emplace_back(std::thread{lambda});
@@ -99,6 +102,7 @@ int main(int argc, char **argv)
   {
     const std::vector<char> data = readFromFile(argv[1]);
     const std::vector<char> badData = hack(data, "He-he-he");
+    std::cout << "out data:" << badData.data() << '\n';
     writeToFile(argv[2], badData);
   }
   catch (std::exception &ex)
